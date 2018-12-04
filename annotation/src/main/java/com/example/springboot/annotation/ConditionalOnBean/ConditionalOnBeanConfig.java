@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * @program: demo
  * @description: 测试注解 {@link ConditionalOnBean}
+ * 可用在cloud中，例如sleuth会监听feign类，如果feign客户端创建， 就初始化一个切面包装feign进行trice跟踪打印
  * @author: xiaonan.zhang
  * @create: 2018-12-04 17:08
  **/
