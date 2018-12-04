@@ -1,4 +1,9 @@
 */target/
+*.gitignore
+*/.mvn
+
+
+
 ### STS ###
 .apt_generated
 .classpath
