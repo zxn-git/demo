@@ -15,6 +15,7 @@
     <modules>
         <module>sleuth</module>
         <module>annotation</module>
+        <module>simple</module>
     </modules>
 
     <properties>

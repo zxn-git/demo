@@ -1,3 +1,6 @@
 spring:
   application:
-    name: 测试sleuth
+    name: sleuth
+  sleuth: #日志采集
+    sampler:
+      percentage: 1

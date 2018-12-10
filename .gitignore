@@ -1,7 +1,8 @@
 */target/
 *.gitignore
 */.mvn
-
+*/mvnw
+*/mvnw.cmd
 
 
 ### STS ###
