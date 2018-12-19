@@ -1,11 +1,12 @@
-package com.example.java.simple;
+package com.example.java.simple.thread;
 
 /**
  * @description:
  * @author: xiaonan.zhang
  * @create: 2018-12-06 14:08
  **/
-public class threadlocal {
+public class
+threadlocal {
     public static void getValue() {
         ThreadLocal<String> stringThreadLocal = new ThreadLocal<>();
         String s = stringThreadLocal.get();
