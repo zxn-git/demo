@@ -6,24 +6,37 @@ package com.example.java.simple.lambda;
  * @create: 2018-12-20 18:26
  **/
 
+import com.example.java.simple.pojo.User;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.ExceptionUtils;
+import org.springframework.util.SerializationUtils;
+
+import java.beans.Introspector;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
 import java.lang.invoke.SerializedLambda;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>
  * Lambda 解析工具类
+ * 参考 mybatis-plus-boot-starter 中 Wrapper 实现
+ * 通过User::getName 得到字符串"name"
  * </p>
  *
  * @author HCL
  * @since 2018-05-10
  */
-public final class LambdaUtils {
-//    https://github.com/liuyuyu/java-code-suggest/blob/master/src/main/java/io/github/liuyuyu/lambda/meta/Lambda_Meta.md
+@Slf4j
+public final class LambdaClassUtils {
+    //    https://github.com/liuyuyu/java-code-suggest/blob/master/src/main/java/io/github/liuyuyu/lambda/meta/Lambda_Meta.md
     private static final Map<String, Map<String, String>> LAMBDA_CACHE = new ConcurrentHashMap<>();
 
     /**
@@ -40,27 +53,47 @@ public final class LambdaUtils {
      * @param <T>  类型，被调用的 Function 对象的目标类型
      * @return 返回解析后的结果
      */
-    public static <T> SerializedLambda resolve(SFunction<T, ?> func) {
-        Class clazz = func.getClass();
-        return Optional.ofNullable(FUNC_CACHE.get(clazz))
-                .map(WeakReference::get)
-                .orElseGet(() -> {
-                    SerializedLambda lambda = SerializedLambda.resolve(func);
-                    FUNC_CACHE.put(clazz, new WeakReference<>(lambda));
-                    return lambda;
-                });
+    public static <T> String resolve(SFunction<T, ?> func) {
+        try {
+            //不是很懂这个方法是干什么用的
+            Method method = func.getClass().getDeclaredMethod("writeReplace");
+            method.setAccessible(Boolean.TRUE);
+            SerializedLambda serializedLambda = (SerializedLambda) method.invoke(func);
+            String getter = serializedLambda.getImplMethodName();
+            String fieldName = Introspector.decapitalize(getter.replace("get", ""));
+            return fieldName;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    /**
-     * <p>
-     * 缓存实体类名与表字段映射关系
-     * </p>
-     *
-     * @param clazz     实体
-     * @param tableInfo 表信息
-     */
-    public static void createCache(Class clazz, TableInfo tableInfo) {
-        LAMBDA_CACHE.put(clazz.getName(), createLambdaMap(tableInfo, clazz));
+
+//    /**
+//     * 通过反序列化转换 lambda 表达式，该方法只能序列化 lambda 表达式，不能序列化接口实现或者正常非 lambda 写法的对象
+//     *
+//     * @param lambda lambda对象
+//     * @return 返回解析后的 SerializedLambda
+//     */
+//    public static SerializedLambda resolve(SFunction lambda) {
+//        if (!lambda.getClass().isSynthetic()) {
+//            throw ExceptionUtils.mpe("该方法仅能传入 lambda 表达式产生的合成类");
+//        }
+//        try (ObjectInputStream objIn = new ObjectInputStream(new ByteArrayInputStream(SerializationUtils.serialize(lambda))) {
+//            @Override
+//            protected Class<?> resolveClass(ObjectStreamClass objectStreamClass) throws IOException, ClassNotFoundException {
+//                Class<?> clazz = super.resolveClass(objectStreamClass);
+//                return clazz == java.lang.invoke.SerializedLambda.class ? SerializedLambda.class : clazz;
+//            }
+//        }) {
+//            return (SerializedLambda) objIn.readObject();
+//        } catch (ClassNotFoundException | IOException e) {
+//            throw ExceptionUtils.mpe("This is impossible to happen", e);
+//        }
+//    }
+
+    public static void main(String... star) {
+        String resolve = resolve(User::getName);
+        log.info("输出字段名：{}", resolve);
     }
 
     /**
@@ -74,31 +107,6 @@ public final class LambdaUtils {
         Map<String, String> cacheMap = LAMBDA_CACHE.getOrDefault(className, new HashMap<>());
         cacheMap.put(property, sqlSelect);
         LAMBDA_CACHE.put(className, cacheMap);
-    }
-
-    /**
-     * <p>
-     * 缓存实体字段 MAP 信息
-     * </p>
-     *
-     * @param tableInfo 表信息
-     * @return 缓存 map
-     */
-    private static Map<String, String> createLambdaMap(TableInfo tableInfo, Class clazz) {
-        Map<String, String> map = new HashMap<>();
-        if (StringUtils.isNotEmpty(tableInfo.getKeyProperty())) {
-            if (tableInfo.getClazz() != clazz) {
-                saveCache(tableInfo.getClazz().getName(), tableInfo.getKeyProperty(), tableInfo.getKeyColumn());
-            }
-            map.put(tableInfo.getKeyProperty(), tableInfo.getKeyColumn());
-        }
-        tableInfo.getFieldList().forEach(i -> {
-            if (i.getClazz() != clazz) {
-                saveCache(i.getClazz().getName(), i.getProperty(), i.getColumn());
-            }
-            map.put(i.getProperty(), i.getColumn());
-        });
-        return map;
     }
 
     /**
