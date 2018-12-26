@@ -19,7 +19,7 @@ public class User {
     private Integer age;
 
 
-    public String aaa(){
+    public String aaa() {
         System.out.println("sdfasdfasf");
         return "aaaa";
     }

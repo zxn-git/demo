@@ -29,10 +29,6 @@ public class JdkFunction {
      * @ Date: 下午6:11 2018/12/19
      */
     public static void function(Function<User, String> femaleStyle) {
-
-
-
-
         User name = new User("male", 33);
         String apply = femaleStyle.apply(name);
         System.out.println(apply);

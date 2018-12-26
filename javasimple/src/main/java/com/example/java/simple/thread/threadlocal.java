@@ -13,7 +13,7 @@ threadlocal {
         System.out.println(s);
     }
 
-    public static void main(String... ss){
+    public static void main(String... ss) {
         ThreadLocal<String> stringThreadLocal = new ThreadLocal<>();
         stringThreadLocal.set("线程插入");
         getValue();
